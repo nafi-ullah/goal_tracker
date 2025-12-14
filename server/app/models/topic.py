@@ -12,6 +12,7 @@ class ResourceTopic(Base):
     point_multiplier = Column(Float, default=1.0)
     is_completed = Column(Boolean, default=False)
     is_skipped = Column(Boolean, default=False)
+    complete_date = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Relationships

@@ -7,6 +7,7 @@ class TopicBase(BaseModel):
     point_multiplier: Optional[float] = 1.0
     is_completed: Optional[bool] = False
     is_skipped: Optional[bool] = False
+    complete_date: Optional[datetime] = None
 
 class TopicCreate(TopicBase):
     resource_id: int
@@ -16,6 +17,7 @@ class TopicUpdate(BaseModel):
     point_multiplier: Optional[float] = None
     is_completed: Optional[bool] = None
     is_skipped: Optional[bool] = None
+    complete_date: Optional[datetime] = None
 
 class TopicStatusUpdate(BaseModel):
     is_completed: Optional[bool] = None

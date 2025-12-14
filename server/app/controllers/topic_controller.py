@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from app.models.topic import ResourceTopic
 from app.schemas.topic import TopicCreate, TopicUpdate, BulkTopicCreate, TopicStatusUpdate
 from typing import List
+from datetime import datetime
 
 class TopicController:
     @staticmethod
@@ -50,6 +51,15 @@ class TopicController:
             raise HTTPException(status_code=404, detail="Topic not found")
         
         update_data = topic_update.model_dump(exclude_unset=True)
+        
+        # If is_completed is being set to True, automatically set complete_date
+        if "is_completed" in update_data and update_data["is_completed"] == True:
+            if not topic.is_completed:  # Only set if it wasn't already completed
+                update_data["complete_date"] = datetime.now()
+        # If is_completed is being set to False, clear complete_date
+        elif "is_completed" in update_data and update_data["is_completed"] == False:
+            update_data["complete_date"] = None
+        
         for key, value in update_data.items():
             setattr(topic, key, value)
         
@@ -65,6 +75,15 @@ class TopicController:
             raise HTTPException(status_code=404, detail="Topic not found")
         
         update_data = status_update.model_dump(exclude_unset=True)
+        
+        # If is_completed is being set to True, automatically set complete_date
+        if "is_completed" in update_data and update_data["is_completed"] == True:
+            if not topic.is_completed:  # Only set if it wasn't already completed
+                update_data["complete_date"] = datetime.now()
+        # If is_completed is being set to False, clear complete_date
+        elif "is_completed" in update_data and update_data["is_completed"] == False:
+            update_data["complete_date"] = None
+        
         for key, value in update_data.items():
             setattr(topic, key, value)
         
