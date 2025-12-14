@@ -1,0 +1,15 @@
+connect all the apis of the /server/app/controllers folder and create following pages in nextjs frontend. connect the apis.
+ui should be beautiful and responsive and best user experience.
+components should be sepearte from root page.tsx. maintain types in typescript. if need then curl the api to get how response data is structures.
+
+
+/login
+/signup
+/dashboard 
+==> show the all data of /user/{user_id}/details api and show in progress bar chart of last 7days etc.
+
+/goals 
+/goals/{goal_id}
+
+/resource 
+/resource/{resource_id}
