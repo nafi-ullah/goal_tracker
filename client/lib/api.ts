@@ -1,5 +1,5 @@
 // API Configuration and Helper Functions
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://goal-tracker-ivory.vercel.app/api';
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
