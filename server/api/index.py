@@ -1,7 +1,8 @@
 """
-Vercel serverless function entry point
+Vercel serverless function entry point for FastAPI
 """
+from mangum import Mangum
 from app.main import app
 
-# Vercel will use this as the entry point
-handler = app
+# Wrap FastAPI app with Mangum for AWS Lambda/Vercel compatibility
+handler = Mangum(app, lifespan="off")
