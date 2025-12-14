@@ -41,9 +41,9 @@ CREATE TABLE goals (
     title VARCHAR(255) NOT NULL,             -- "1. Set Goal"
     description TEXT,                        -- "2. Description"
     reward_type VARCHAR(100),                -- "3. Points/Salary/Score/Money" (interpreted as reward definition)
-    target_value FLOAT,                      -- "5. Target"
-    initial_value FLOAT DEFAULT 0,           -- "6. Initial value"
-    domain_name VARCHAR(100),                -- "7. Domain Name" (Can be used to link to resources loosely or strictly)
+    target_value FLOAT,                      -- "4. Target"
+    initial_value FLOAT DEFAULT 0,           -- "5. Initial value"
+    domain_name VARCHAR(100),                -- "6. Domain Name" (Can be used to link to resources loosely or strictly)
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
