@@ -1,0 +1,75 @@
+###
+API
+1. Login, Signup, Change Password, Edit Profile (without password)
+2. CRUD for Goals ( Create, Get goals by userid, Update, Delete)
+3. CRUD for Resources ( Create, Get resources by goalid , Update, Delete)
+4. CRUD for Resource Topics ( Create, Get topics by resourceid , Update, Delete)
+5. Get all Goals with Resources and Topics for a user (nested structure, if multiple object then array)
+ - Include calculated fields:
+   - with each resource topic: topic_point_value = resource value per unit * topic point multiplier
+   - total_topic_points for each resource: sum of topic_point_value for all topics under that resource
+   - goals total points = sum of total_topic_points for all resources under that goal
+   - increament_goal_value_per_point = initial value + ((target value - initial value) / goals total points)
+   - completed_points calculations:
+        - completed_points_resources = sum of topic_point_value for all completed topics under that resource
+        - completed_point_goal = sum of completed_points_resources for all resources under that goal
+        - current_goal_value = initial value + (completed_points * increament_goal_value_per_point)
+6. POST api to create multiple Resource Topics for a Resource in one call (bulk insert)
+7. POST api to update a Resource Topic's completion and skipped status
+  - If completion status is updated to true, then increment the goal's current value by (resource value per unit * topic point multiplier)
+
+
+
+
+-- 1. USERS TABLE
+-- Corresponds to the "User" section in top right
+CREATE TABLE users (
+    user_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    phone VARCHAR(20),
+    occupation VARCHAR(100),
+    password VARCHAR(255) NOT NULL,  plain text
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. GOALS TABLE
+-- Corresponds to the "Goal" section in the center
+CREATE TABLE goals (
+    goal_id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,             -- "1. Set Goal"
+    description TEXT,                        -- "2. Description"
+    reward_type VARCHAR(100),                -- "3. Points/Salary/Score/Money" (interpreted as reward definition)
+    target_value FLOAT,                      -- "5. Target"
+    initial_value FLOAT DEFAULT 0,           -- "6. Initial value"
+    domain_name VARCHAR(100),                -- "7. Domain Name" (Can be used to link to resources loosely or strictly)
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 3. RESOURCES (DOMAINS) TABLE
+CREATE TABLE resources (
+    resource_id SERIAL PRIMARY KEY,
+    resource_type VARCHAR(50),               -- "1. Top Resource type (Book/Course/Activity)"
+    title VARCHAR(255) NOT NULL,             -- "2. Resource title"
+    value_per_unit INTEGER DEFAULT 0,        -- "3. Resource value per unit" (e.g., 10 minutes video = 10)
+    total_time_per_unit INTERVAL,            -- "4. Total time per unit" (e.g., '30 minutes')
+    resource_link VARCHAR(500),              -- "5. Resource link type"
+    note TEXT,                               -- "6. Note"
+    goal_id INTEGER REFERENCES goals(goal_id), -- Optional: Strict link to a specific goal
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+-- 4. RESOURCE TOPICS TABLE
+CREATE TABLE resource_topics (
+    topic_id SERIAL PRIMARY KEY,
+    resource_id INTEGER REFERENCES resources(resource_id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,             -- "1. Topic title"
+    point_multiplier FLOAT DEFAULT 1.0,      -- "2. Topic point multiplier (float)"
+    is_completed BOOLEAN DEFAULT FALSE,      -- "3. is completed"
+    is_skipped BOOLEAN DEFAULT FALSE,        -- "4 . is skipped"
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
