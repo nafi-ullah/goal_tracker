@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, Text, DateTime, Date, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -14,6 +14,8 @@ class Goal(Base):
     target_value = Column(Float)
     initial_value = Column(Float, default=0)
     domain_name = Column(String(100))
+    initial_date = Column(Date)
+    target_date = Column(Date)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Relationships
