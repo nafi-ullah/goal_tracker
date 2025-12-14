@@ -22,11 +22,18 @@ class ResourceController:
         db.add(db_resource)
         db.commit()
         db.refresh(db_resource)
+        # Convert timedelta to string before returning
+        if db_resource.total_time_per_unit:
+            db_resource.total_time_per_unit = str(db_resource.total_time_per_unit)
         return db_resource
     
     @staticmethod
     def get_resources_by_goal(db: Session, goal_id: int):
         resources = db.query(Resource).filter(Resource.goal_id == goal_id).all()
+        # Convert timedelta to string for each resource
+        for resource in resources:
+            if resource.total_time_per_unit:
+                resource.total_time_per_unit = str(resource.total_time_per_unit)
         return resources
     
     @staticmethod
@@ -34,6 +41,9 @@ class ResourceController:
         resource = db.query(Resource).filter(Resource.resource_id == resource_id).first()
         if not resource:
             raise HTTPException(status_code=404, detail="Resource not found")
+        # Convert timedelta to string before returning
+        if resource.total_time_per_unit:
+            resource.total_time_per_unit = str(resource.total_time_per_unit)
         return resource
     
     @staticmethod
@@ -58,6 +68,9 @@ class ResourceController:
         
         db.commit()
         db.refresh(resource)
+        # Convert timedelta to string before returning
+        if resource.total_time_per_unit:
+            resource.total_time_per_unit = str(resource.total_time_per_unit)
         return resource
     
     @staticmethod
