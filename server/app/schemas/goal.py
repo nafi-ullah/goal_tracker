@@ -41,6 +41,7 @@ class TopicDetail(BaseModel):
     is_completed: bool
     is_skipped: bool
     topic_point_value: float
+    complete_date: Optional[datetime]
     created_at: datetime
 
     class Config:
@@ -69,6 +70,14 @@ class GoalDetailResponse(GoalBase):
     increment_goal_value_per_point: float
     completed_points_goal: float
     current_goal_value: float
+    # Daily target calculations
+    from_today_remaining_days: Optional[int]
+    daily_target_points: Optional[float]
+    daily_target_value: Optional[float]
+    # Today's progress
+    todays_completed_points: float
+    todays_completed_value: float
+    todays_completion_percentage: Optional[float]
     resources: List[ResourceDetail]
     created_at: datetime
 

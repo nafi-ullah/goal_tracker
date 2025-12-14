@@ -5,6 +5,7 @@ from app.models.resource import Resource
 from app.models.topic import ResourceTopic
 from app.schemas.goal import GoalCreate, GoalUpdate, GoalDetailResponse, ResourceDetail, TopicDetail
 from typing import List
+from datetime import datetime, date
 
 class GoalController:
     @staticmethod
@@ -58,11 +59,14 @@ class GoalController:
         ).all()
         
         result = []
+        today = date.today()
+        
         for goal in goals:
             # Calculate all metrics for the goal
             resources_detail = []
             goals_total_points = 0
             completed_points_goal = 0
+            todays_completed_points = 0
             
             for resource in goal.resources:
                 topics_detail = []
@@ -77,6 +81,12 @@ class GoalController:
                     if topic.is_completed:
                         completed_points_resources += topic_point_value
                     
+                    # Check if topic was completed today
+                    if topic.is_completed and topic.complete_date:
+                        complete_date_only = topic.complete_date.date()
+                        if complete_date_only == today:
+                            todays_completed_points += topic_point_value
+                    
                     topics_detail.append(TopicDetail(
                         topic_id=topic.topic_id,
                         title=topic.title,
@@ -84,6 +94,7 @@ class GoalController:
                         is_completed=topic.is_completed,
                         is_skipped=topic.is_skipped,
                         topic_point_value=topic_point_value,
+                        complete_date=topic.complete_date,
                         created_at=topic.created_at
                     ))
                 
@@ -112,6 +123,29 @@ class GoalController:
                 increment_goal_value_per_point = 0
                 current_goal_value = goal.initial_value
             
+            # Calculate daily target metrics
+            from_today_remaining_days = None
+            daily_target_points = None
+            daily_target_value = None
+            
+            if goal.target_date:
+                from_today_remaining_days = (goal.target_date - today).days
+                
+                if from_today_remaining_days > 0:
+                    # Daily target points = goals total points / total days
+                    daily_target_points = goals_total_points / from_today_remaining_days
+                    
+                    # Daily target value = (target value - current goal value) / total days
+                    daily_target_value = (goal.target_value - current_goal_value) / from_today_remaining_days
+            
+            # Calculate today's completed value
+            todays_completed_value = todays_completed_points * increment_goal_value_per_point
+            
+            # Calculate today's completion percentage
+            todays_completion_percentage = None
+            if daily_target_points and daily_target_points > 0:
+                todays_completion_percentage = (todays_completed_points / daily_target_points) * 100
+            
             result.append(GoalDetailResponse(
                 goal_id=goal.goal_id,
                 user_id=goal.user_id,
@@ -121,12 +155,24 @@ class GoalController:
                 target_value=goal.target_value,
                 initial_value=goal.initial_value,
                 domain_name=goal.domain_name,
+                initial_date=goal.initial_date,
+                target_date=goal.target_date,
                 goals_total_points=goals_total_points,
                 increment_goal_value_per_point=increment_goal_value_per_point,
                 completed_points_goal=completed_points_goal,
                 current_goal_value=current_goal_value,
+                # Daily target calculations
+                from_today_remaining_days=from_today_remaining_days,
+                daily_target_points=daily_target_points,
+                daily_target_value=daily_target_value,
+                # Today's progress
+                todays_completed_points=todays_completed_points,
+                todays_completed_value=todays_completed_value,
+                todays_completion_percentage=todays_completion_percentage,
                 resources=resources_detail,
                 created_at=goal.created_at
             ))
         
         return result
+    
+
