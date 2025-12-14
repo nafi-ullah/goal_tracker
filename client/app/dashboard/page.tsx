@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/auth';
-import { goalApi } from '@/lib/api';
+import { goalApi, topicApi } from '@/lib/api';
 import { GoalDetail } from '@/types';
 import Navbar from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,15 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { 
   Target, 
   TrendingUp, 
@@ -20,7 +29,9 @@ import {
   CheckCircle2,
   Clock,
   Zap,
-  Loader2
+  Loader2,
+  NotebookPen,
+  ExternalLink
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -40,6 +51,8 @@ export default function DashboardPage() {
   const [goals, setGoals] = useState<GoalDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [resourcesModalOpen, setResourcesModalOpen] = useState(false);
+  const [updatingTopic, setUpdatingTopic] = useState<number | null>(null);
 
   useEffect(() => {
     const user = auth.getUser();
@@ -61,6 +74,34 @@ export default function DashboardPage() {
       setLoading(false);
     }
   };
+
+  const handleTopicToggle = async (topicId: number, currentStatus: boolean) => {
+    try {
+      setUpdatingTopic(topicId);
+      await topicApi.updateStatus(topicId, {
+        is_completed: !currentStatus
+      });
+      
+      // Reload goals to get updated data
+      const user = auth.getUser();
+      if (user) {
+        await loadGoals(user.user_id);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to update topic');
+    } finally {
+      setUpdatingTopic(null);
+    }
+  };
+
+  // Flatten all resources from all goals for the notebook view
+  const allResources = goals.flatMap(goal => 
+    goal.resources.map(resource => ({
+      ...resource,
+      goalTitle: goal.title,
+      goalId: goal.goal_id
+    }))
+  );
 
   // Calculate dashboard statistics
   const stats = {
@@ -110,9 +151,135 @@ export default function DashboardPage() {
       <Navbar />
       
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Dashboard</h1>
-          <p className="text-muted-foreground">Track your progress and achievements</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Dashboard</h1>
+            <p className="text-muted-foreground">Track your progress and achievements</p>
+          </div>
+          
+          {/* Notebook Icon - Opens Resources Modal */}
+          <Sheet open={resourcesModalOpen} onOpenChange={setResourcesModalOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all"
+              >
+                <NotebookPen className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent 
+              side="right" 
+              className="w-full sm:w-full md:w-1/3 overflow-y-auto"
+            >
+              <SheetHeader>
+                <SheetTitle>Resources & Topics</SheetTitle>
+                <SheetDescription>
+                  View and manage all your learning resources and topics
+                </SheetDescription>
+              </SheetHeader>
+              
+              <div className="mt-6 space-y-6">
+                {allResources.length === 0 ? (
+                  <div className="text-center py-12">
+                    <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-30" />
+                    <h3 className="text-lg font-medium mb-2">No resources found</h3>
+                    <p className="text-muted-foreground">
+                      Add resources to your goals to see them here
+                    </p>
+                  </div>
+                ) : (
+                  allResources.map((resource) => (
+                    <Card key={resource.resource_id} className="shadow-md">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <CardTitle className="text-base">{resource.title}</CardTitle>
+                            <CardDescription className="text-xs mt-1">
+                              {resource.goalTitle}
+                            </CardDescription>
+                          </div>
+                          {resource.resource_link && (
+                            <a
+                              href={resource.resource_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:text-primary/80"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {resource.resource_type}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {resource.completed_points_resources} / {resource.total_topic_points} points
+                          </span>
+                        </div>
+                      </CardHeader>
+                      
+                      <CardContent>
+                        {resource.topics.length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-4">
+                            No topics added yet
+                          </p>
+                        ) : (
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium mb-3">Topics:</p>
+                            {resource.topics.map((topic) => (
+                              <div
+                                key={topic.topic_id}
+                                className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                              >
+                                <div className="flex-1 min-w-0 mr-3">
+                                  <p className={`text-sm font-medium truncate ${
+                                    topic.is_completed ? 'line-through text-muted-foreground' : ''
+                                  }`}>
+                                    {topic.title}
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-xs text-muted-foreground">
+                                      {topic.topic_point_value} points
+                                    </span>
+                                    {topic.complete_date && (
+                                      <span className="text-xs text-green-600">
+                                        ✓ {new Date(topic.complete_date).toLocaleDateString()}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant={topic.is_completed ? "outline" : "default"}
+                                  className={`rounded-full h-8 w-8 p-0 shrink-0 ${
+                                    topic.is_completed 
+                                      ? 'bg-green-100 hover:bg-green-200 border-green-300' 
+                                      : ''
+                                  }`}
+                                  onClick={() => handleTopicToggle(topic.topic_id, topic.is_completed)}
+                                  disabled={updatingTopic === topic.topic_id}
+                                >
+                                  {updatingTopic === topic.topic_id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : topic.is_completed ? (
+                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                  ) : (
+                                    <span className="text-xs">✓</span>
+                                  )}
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
 
         {error && (
