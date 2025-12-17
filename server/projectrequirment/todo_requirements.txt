@@ -1,0 +1,72 @@
+Create the apis 
+
+-- 6. ACTIVITY TYPES
+-- Corresponds to the list on the right: "Study, Office, Wakeup, Idle..."
+CREATE TABLE activity_types (
+    activity_type_id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE, -- e.g., 'Study', 'Office', 'Social'
+    icon_name VARCHAR(50)             -- Optional: for UI icons
+);
+
+
+
+-- 7. TODO SECTIONS / CATEGORIES
+-- Corresponds to "Daily_todo_category" (middle right)
+CREATE TABLE todo_sections (
+    section_id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
+    title VARCHAR(100) NOT NULL,               -- "section_title"
+    description TEXT,                          -- "section_description"
+    linked_activity_id INTEGER REFERENCES activity_types(activity_type_id), -- "activity_id" (Link section to an activity type)
+);
+
+-- 8. TODOS
+-- Corresponds to "Todos" (bottom center)
+CREATE TABLE todos (
+    todo_id SERIAL PRIMARY KEY,
+    section_id INTEGER REFERENCES todo_sections(section_id) ON DELETE CASCADE, -- "cat_id" / "category_id"
+    title VARCHAR(255) NOT NULL,               -- "title"
+    description TEXT,                          -- "description"
+    priority_level VARCHAR(20) CHECK (priority_level IN ('Urgent', 'Medium', 'Less')), -- "priority" (Urgent deadline, medium, less)
+    approx_time_to_complete INTERVAL,          -- "approx time to complete"
+    priority_order INTEGER DEFAULT 0,          -- "priority_order"
+    is_completed BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 9. CALENDAR EVENTS
+CREATE TABLE calendar_events (
+    event_id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    event_start TIMESTAMP NOT NULL,
+    event_end TIMESTAMP,
+    
+);
+
+-- 10. PRIORITY PRESETS
+CREATE TABLE daily_priority (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
+    description TEXT,
+    day_type // working day,office holiday, festive holiday ,self healing day
+    date DATETIME,
+    no_slots INTEGER, // default 10 
+);
+
+// next days task: calander ta fixed , meeting er time / namazer time gula default hoye jabe task a 
+// todo er ta urgent priority dekhbe 
+
+-- 11. DAILY ACTIVITIES (Time Tracking)
+-- Corresponds to "Daily activities" (top left) & "Activity" (top right)
+CREATE TABLE daily_activities (
+    daily_activity_id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
+    activity_type_id INTEGER REFERENCES activity_types(activity_type_id),
+    title VARCHAR(100),                        -- Optional specific title
+    start_time TIMESTAMP NOT NULL,             -- "start_time"
+    end_time TIMESTAMP,                        -- "end_time"
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
