@@ -5,7 +5,7 @@
 - Python 3.8+ installed
 
 ## 🎯 Complete Setup (Backend + Frontend)
-
+  
 ### Step 1: Start the Backend Server
 
 ```bash
